@@ -13,7 +13,7 @@ struct ContentView: View {
                                GridItem(.flexible())]
     
     @State private var plays: [Play?] = Array(repeating: nil, count: 9)
-    @State private var isHumanTurn = true
+    @State private var isBoardDisabled: Bool = false
     
     var body: some View {
         GeometryReader { geometry in
@@ -31,16 +31,38 @@ struct ContentView: View {
                                 .frame(width: 40, height: 40)
                         }
                         .onTapGesture {
-                            plays[i] = Play(player: isHumanTurn ? .human : .computer, boardIndex: i)
-                            isHumanTurn.toggle()
+                            // if there is already a play there, don't do anything
+                            if isSpaceOccupied(in: plays, forIndex: i) { return }
+                            
+                            plays[i] = Play(player:. human, boardIndex: i)
+                            isBoardDisabled = true
+                            
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                                let computerPosition = chooseComputerPlayPosition(in: plays)
+                                plays[computerPosition] = Play(player: .computer, boardIndex: computerPosition)
+                                isBoardDisabled = false
+                            }
                         }
                     }
                 }
                 Spacer()
             }
+            .disabled(isBoardDisabled)
             .padding()
         }
-
+    }
+    
+    func isSpaceOccupied(in plays: [Play?], forIndex index: Int) -> Bool {
+        return plays.contains(where: {$0?.boardIndex == index})
+    }
+    
+    func chooseComputerPlayPosition(in plays: [Play?]) -> Int {
+        var playPosition = Int.random(in: 0..<9)
+        while isSpaceOccupied(in: plays, forIndex: playPosition) {
+            playPosition = Int.random(in: 0..<9)
+        }
+        
+        return playPosition
     }
 }
 
