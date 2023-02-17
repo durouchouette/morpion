@@ -56,12 +56,41 @@ final class GameViewModel: ObservableObject {
     }
     
     func chooseComputerPlayPosition(in plays: [Play?]) -> Int {
+        // If AI can win, then win
+        if let win = selectWinPosition(player: .computer) {
+            return win
+        }
+        
+        // If can't win, then block
+        if let block = selectWinPosition(player: .human) {
+            return block
+        }
+        
+        // If can't block, then take a random space
         var playPosition = Int.random(in: 0..<9)
         while isSpaceOccupied(in: plays, forIndex: playPosition) {
             playPosition = Int.random(in: 0..<9)
         }
         
         return playPosition
+    }
+    
+    func selectWinPosition(player: Player) -> Int? {
+        let winPatterns: Set<Set<Int>> =
+            [[0,1,2], [3,4,5], [6,7,8], [0,3,6], [1,4,7], [2,5,8], [0,4,8], [2,4,6]]
+        
+        let computerMoves = plays.compactMap { $0 }.filter { $0.player == player }
+        let computerPositions = Set(computerMoves.map { $0.boardIndex })
+        
+        for pattern in winPatterns {
+            let winPositions = pattern.subtracting(computerPositions)
+            if winPositions.count == 1 {
+                let isAvailable = !isSpaceOccupied(in: plays, forIndex: winPositions.first!)
+                if isAvailable { return winPositions.first! }
+            }
+        }
+        
+        return nil
     }
     
     func checkWinCondition(for player: Player, in plays: [Play?]) -> Bool {
